@@ -1,0 +1,33 @@
+<!doctype>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="Font-Awesome/css/font-awesome.min.css">
+    <title></title>
+    <style type="text/css">
+    body{margin:0;padding:0;}
+      .container{margin:0 auto;width:700px;padding-top:0;}
+      ul{margin:0 auto;width:700px;padding-top: 0;}
+      li{padding:20px 0;}
+      .fly_btn{position:fixed;right:15.2%;top:30%;}
+      .pageNo{position:fixed;right:15.7%;top:35%;width:10px;line-height:20px;}
+      .pageNoBtn{cursor: pointer;display:block;float:left;width:10px;}
+      .pageNoBtn:hover{color:blue;}
+    </style>
+  </head>
+  <body>
+    <div id="list" class="container">
+      <ul page-no="1">
+        <li style="list-style:none;">
+        </li>
+      </ul>
+    </div>
+    <div style="padding:7px 0;" class="container"><img src="loading2.gif"></div>
+    <button class="fly_btn" onclick="gotoPre()"><i class="icon-angle-up"></i></button> 
+    <div class="pageNo">
+    </div>
+    <button class="fly_btn gotoNext" onclick="gotoNext()" style="top:66%"><i class="icon-angle-down"></i</button>
+    <script src="jquery-1.9.1.min.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>
