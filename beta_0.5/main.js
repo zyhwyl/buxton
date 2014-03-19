@@ -5,6 +5,7 @@ var now_page_position=0;
 var nowPage=1;
 var SCROLL_DIRECTION="down";
 var scroll_lock=false;
+var base_top=$("#list").offset().top;
 
 $(function(){
   var awesomeThings = [
@@ -32,7 +33,6 @@ $(function(){
   freshContent($("#list"),pageHelper.getNowDataList(),nowPage);
 
   //scroll load
-  var base_top=$("#list").offset().top;
   var page_height=$("#list").height();
   
   $(window).scroll(function(){
@@ -54,26 +54,26 @@ $(function(){
           page_height=now_page_cache[i].pageTop-now_page_cache[i].pageTop%100;
         }
       };
-      c(page_height)
       //if now position > this page content`s height,page number++
       if(base_position>page_height){
         nowPage++;
       }
-    }else{
+    }else if(SCROLL_DIRECTION==="up"){
       for (var i = 0; i < now_page_cache.length; i++) {
         //向上滚动时 检查出上一页是否存在
         if(nowPage==now_page_cache[i].pageNo){
-          if(nowPage!=1){
-            //上一页不存在 加载上一页
-            if(now_page_cache[i].pageNo-1!=now_page_cache[i-1].pageNo){
-              scrollChangePage(pageHelper,"pre");
-            }
-          }
           if(i-1>=0){
             page_height=now_page_cache[i-1].pageTop;
             //get the height of pre page,and if the base_position < the height of now page,page number-- 
             if(base_position<page_height){
               nowPage--;
+              if(nowPage!=1){
+                //上一页不存在 加载上一页
+                if(now_page_cache[i].pageNo-1!=now_page_cache[i-1].pageNo){
+                  loadAnimate();
+                  scrollChangePage(pageHelper,"pre");
+                }
+              }
             }
           }
         }
@@ -96,13 +96,17 @@ function scrollChangePage($pageHelper,$direction){
     setTimeout(function(){
       scroll_lock=false;
       var _data;
-      if($direction=="next")
+      if($direction=="next"){
         _data=$pageHelper.goNextPage();
-      else
+        var _now_scroll_top=$(window).scrollTop();
+        freshContent($("#list"),_data,$pageHelper.getNowPageNo());
+        $(window).scrollTop(_now_scroll_top);
+      }
+      else{
         _data=$pageHelper.goPrePage();
-      var _now_scroll_top=$(window).scrollTop();
-      freshContent($("#list"),_data,$pageHelper.getNowPageNo());
-      $(window).scrollTop(_now_scroll_top);
+        freshContent($("#list"),_data,$pageHelper.getNowPageNo(),true);
+      }
+      closeLoadAnimate();
     },1000);
   }
 }
@@ -113,10 +117,16 @@ function c(obj){
 
 function freshContent($wrap,$data,$pageNo,$goto){
   var is_cache_exist=false;
+  var goto_page_top=0;
   //检查跳转的页面是否已经存在
   for (var i = 0; i < now_page_cache.length; i++) {
-    if(now_page_cache[i].pageNo==$pageNo)
+    if(now_page_cache[i].pageNo==$pageNo){
       is_cache_exist=true;
+      if(i===0)
+        goto_page_top=base_top;
+      else
+        goto_page_top=now_page_cache[i-1].pageTop;
+    }
   }
   if(!is_cache_exist){
     $wrap.html("");
@@ -131,10 +141,13 @@ function freshContent($wrap,$data,$pageNo,$goto){
       $wrap.append(_ulc);
       _ulc.attr("top",_ulc.offset().top+_ulc.height());
       now_page_cache[i].pageTop=_ulc.offset().top+_ulc.height();
+      if($pageNo===now_page_cache[i].pageNo&&$pageNo!==1){
+        goto_page_top=now_page_cache[i-1].pageTop;
+      }
     };
   }
   if($goto){
-    $(window).scrollTop(now_page_cache[now_page_cache.length-2].pageTop);
+    $(window).scrollTop(goto_page_top);
     nowPage=$pageNo;
   }
   return true;
@@ -145,10 +158,12 @@ function sortCache($cache_list,$pageNo,$data){
   if($cache_list.length==0){
     $cache_list.push({pageNo:$pageNo,pageData:$data});
   }else{
+    //遍历cache中的数据，如果当前页数，比当前遍历的节点的页数低，则将此页插入当前节点的前一节点
     for (var i = 0; i < $cache_list.length; i++) {
       if($pageNo<$cache_list[i].pageNo){
-        $cache_list.splice(i-1,0,{pageNo:$pageNo,pageData:$data});
+        $cache_list.splice(i,0,{pageNo:$pageNo,pageData:$data});
         _insert_flag=true;
+        break;
       }
     };
     if(!_insert_flag){
@@ -156,6 +171,22 @@ function sortCache($cache_list,$pageNo,$data){
     }
   }
   return $cache_list;
+}
+
+function loadAnimate(){
+  var _wrap=$("<div class='loading_component' />");
+  var _loading=$("<img class='loading_component' src='loading2.gif' />");
+  _wrap.css({'position':'fixed','width':'100%','height':'100%','opacity':'0',
+              'background':'#000','z-index':'999','top':'0','left':'0'});
+  _loading.css({'position':'fixed','top':'45%','left':'50%','z-index':'9999'});
+  $("body").append(_wrap).append(_loading);
+  $("body").css({'overflow':'hidden'});
+  _wrap.animate({'opacity':'0.5'},1000);
+}
+
+function closeLoadAnimate(){
+  $(".loading_component").remove();
+  $("body").css({'overflow-y':'scroll'});
 }
 
 var ScrollListener=(function(){
